@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antipolo NSTHS — Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0A0A0A;
+    --gray: #6B6B6B;
+    --gray-light: #9A9A9A;
+    --line: #DADADA;
+    --present-green: #2E7D46;
+    --bg: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    color: var(--black);
+    background: var(--bg);
+    min-height: 100vh;
+  }
+
+  .app {
+    max-width: 663px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header.school-bar {
+    background: var(--black);
+    color: #fff;
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .school-name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1.3;
+  }
+
+  .gear-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .gear-btn:hover { background: rgba(255,255,255,0.1); }
+
+  .view { display: none; padding: 40px 24px; }
+  .view.active { display: block; }
+
+  /* ---- Connect panel ---- */
+  .connect-panel {
+    background: #F4F4F4;
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: none;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .connect-panel.open { display: flex; }
+  .connect-panel input {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    width: 170px;
+  }
+  .connect-panel button {
+    padding: 8px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--black);
+    background: var(--black);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #B23B3B; display: inline-block; margin-right: 6px;
+  }
+  .status-dot.live { background: var(--present-green); }
+
+  /* ---- Landing view ---- */
+  .clock-block { text-align: center; margin-bottom: 36px; }
+  .clock {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: clamp(44px, 12vw, 60px);
+    line-height: 1;
+  }
+  .date-line {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 17px;
+    color: var(--gray);
+    margin-top: 8px;
+  }
+
+  .btn-stack { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 40px; }
+
+  .pill-btn {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: 20px;
+    color: #fff;
+    background: var(--black);
+    border: none;
+    border-radius: 8px;
+    padding: 14px 40px;
+    cursor: pointer;
+    width: 220px;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .pill-btn:hover { transform: translateY(-2px); opacity: 0.92; }
+  .pill-btn:active { transform: translateY(0); }
+  .pill-btn.disabled { background: var(--gray-light); cursor: not-allowed; }
+  .pill-btn.disabled:hover { transform: none; opacity: 1; }
+
+  .tagline {
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--black);
+  }
+
+  /* ---- Section picker ---- */
+  .back-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--gray);
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 28px;
+    padding: 0;
+  }
+  .back-link:hover { color: var(--black); }
+
+  /* ---- Attendance view ---- */
+  .attendance-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 30px;
+  }
+  .clock-small { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 26px; text-align: right; }
+  .date-small { font-family: 'Playfair Display', serif; font-style: italic; font-size: 13px; color: var(--gray); text-align: right; }
+
+  .tally-line {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--black);
+    margin: 18px 0 14px;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 6px 4px 10px;
+    border-bottom: 2px solid var(--black);
+  }
+  tbody td {
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .student-cell { font-weight: 500; }
+  .record-tag { color: var(--gray-light); font-size: 11px; margin-left: 6px; }
+
+  .status-pending { color: var(--gray-light); }
+  .status-present {
+    color: var(--present-green);
+    font-weight: 600;
+  }
+  .status-time { color: var(--gray); font-weight: 400; margin-left: 6px; font-size: 12px; }
+
+  .reset-row { margin-top: 24px; text-align: right; }
+  .reset-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: none;
+    border: 1px solid #B23B3B;
+    color: #B23B3B;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .reset-btn:hover { background: #B23B3B; color: #fff; }
+
+  .not-configured {
+    text-align: center;
+    color: var(--gray);
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 16px;
+    padding: 60px 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="school-bar">
+    <div class="school-name">Antipolo National Science and Technology High School</div>
+    <button class="gear-btn" id="settingsToggle">Connect</button>
+  </header>
+
+  <div class="connect-panel" id="connectPanel">
+    <span><span class="status-dot" id="statusDot"></span><span id="statusText">Disconnected</span></span>
+    <input type="text" id="ipInput" placeholder="ESP8266 IP e.g. 192.168.1.50" value="192.168.1.50">
+    <button id="connectBtn">Connect</button>
+  </div>
+
+  <!-- SCREEN 1: Landing -->
+  <div class="view active" id="view-landing">
+    <div class="clock-block">
+      <div class="clock" id="clock1">--:--:--</div>
+      <div class="date-line" id="date1">—</div>
+    </div>
+    <div class="btn-stack">
+      <button class="pill-btn" id="openSectionsBtn">Open Sections</button>
+    </div>
+    <p class="tagline">Your Voice Your Attendance : A Speech Based Attendance Tracking System</p>
+  </div>
+
+  <!-- SCREEN 2: Section picker -->
+  <div class="view" id="view-sections">
+    <button class="back-link" data-back="landing">&larr; Back</button>
+    <div class="btn-stack">
+      <button class="pill-btn" data-section="euclid">Euclid</button>
+      <button class="pill-btn" data-section="gauss">Gauss</button>
+      <button class="pill-btn" data-section="ptolemy">Ptolemy</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Attendance -->
+  <div class="view" id="view-attendance">
+    <button class="back-link" data-back="sections">&larr; Back</button>
+    <div class="attendance-head">
+      <div class="section-title" id="sectionTitle">Section selected</div>
+      <div>
+        <div class="clock-small" id="clock2">--:--:--</div>
+        <div class="date-small" id="date2">—</div>
+      </div>
+    </div>
+    <div class="tally-line" id="tallyLine">0 of 0 students present</div>
+
+    <div id="tableWrap">
+      <table>
+        <thead><tr><th>Student</th><th>Status</th></tr></thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+    </div>
+    <div id="notConfigured" class="not-configured" style="display:none;">This section hasn't been set up yet.</div>
+
+    <div class="reset-row">
+      <button class="reset-btn" id="resetBtn">Reset Day</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---- Section data ----
+  // Euclid holds the real (placeholder-named) roster mapped to VR record indices 0-6.
+  // Gauss and Ptolemy are inactive until real students are trained and added here.
+  const sections = {
+    euclid: {
+      label: "sabawan",
+      configured: true,
+      students: [
+        { index: 0, name: "John Charlie" },
+        { index: 1, name: "Ashwyn Deshmukh" },
+        { index: 2, name: "XSayj" },
+        { index: 3, name: "Sean Rafael Cunanan" },
+        { index: 4, name: "Kirby Alexander Ipax" },
+        { index: 5, name: "Gripen Elpanag" },
+        { index: 6, name: "enrique" }
+      ]
+    },
+    gauss:   { label: "Gauss",   configured: false, students: [] },
+    ptolemy: { label: "Ptolemy", configured: false, students: [] }
+  };
+
+  let currentSection = null;
+  let ws = null;
+  let presentCount = 0;
+  const presentData = {}; // index -> time, persists while page is open
+
+  // ---- View switching ----
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+  }
+
+  document.getElementById('openSectionsBtn').addEventListener('click', () => showView('sections'));
+  document.querySelectorAll('[data-back]').forEach(btn => {
+    btn.addEventListener('click', () => showView(btn.dataset.back));
+  });
+
+  document.querySelectorAll('[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openSection(btn.dataset.section);
+    });
+  });
+
+  function openSection(key) {
+    currentSection = key;
+    const section = sections[key];
+    document.getElementById('sectionTitle').textContent = section.label;
+
+    const tableWrap = document.getElementById('tableWrap');
+    const notConfigured = document.getElementById('notConfigured');
+
+    if (!section.configured) {
+      tableWrap.style.display = 'none';
+      notConfigured.style.display = 'block';
+      document.getElementById('tallyLine').textContent = '';
+    } else {
+      tableWrap.style.display = 'block';
+      notConfigured.style.display = 'none';
+      buildRoster(section);
+    }
+    showView('attendance');
+  }
+
+  function buildRoster(section) {
+    const body = document.getElementById('rosterBody');
+    body.innerHTML = '';
+    presentCount = 0;
+
+    section.students.forEach((student, i) => {
+      const row = document.createElement('tr');
+      row.id = 'row-' + student.index;
+      const alreadyPresent = presentData[student.index];
+      row.innerHTML = `
+        <td class="student-cell">${student.name}<span class="record-tag">#${i + 1}</span></td>
+        <td class="status-cell">${alreadyPresent
+          ? `<span class="status-present">Present<span class="status-time">${alreadyPresent}</span></span>`
+          : `<span class="status-pending">Not yet present</span>`}</td>`;
+      body.appendChild(row);
+      if (alreadyPresent) presentCount++;
+    });
+    updateTally(section);
+  }
+
+  function updateTally(section) {
+    document.getElementById('tallyLine').textContent =
+      `${presentCount} of ${section.students.length} students present`;
+  }
+
+  function markPresent(index, time) {
+    presentData[index] = time;
+    if (!currentSection) return;
+    const section = sections[currentSection];
+    const inThisSection = section.students.some(s => s.index === index);
+    if (!inThisSection) return; // event belongs to a different section's roster
+
+    const row = document.getElementById('row-' + index);
+    if (!row) return;
+    const cell = row.querySelector('.status-cell');
+    if (cell.querySelector('.status-present')) return; // already marked
+
+    cell.innerHTML = `<span class="status-present">Present<span class="status-time">${time}</span></span>`;
+    presentCount++;
+    updateTally(section);
+  }
+
+  function resetAll() {
+    for (const key in presentData) delete presentData[key];
+    if (currentSection && sections[currentSection].configured) {
+      buildRoster(sections[currentSection]);
+    }
+  }
+
+  // ---- WebSocket connection ----
+  const settingsToggle = document.getElementById('settingsToggle');
+  const connectPanel = document.getElementById('connectPanel');
+  settingsToggle.addEventListener('click', () => connectPanel.classList.toggle('open'));
+
+  document.getElementById('connectBtn').addEventListener('click', () => {
+    const ip = document.getElementById('ipInput').value.trim();
+    if (!ip) return;
+    if (ws) ws.close();
+
+    ws = new WebSocket(`ws://${ip}:81`);
+    ws.onopen = () => setStatus(true);
+    ws.onclose = () => setStatus(false);
+    ws.onerror = () => setStatus(false);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'checkin') {
+          markPresent(data.index, data.time);
+        } else if (data.event === 'reset') {
+          resetAll();
+        }
+      } catch (e) {
+        console.warn('Unparsed message:', event.data);
+      }
+    };
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send('RESET');
+    } else {
+      resetAll();
+    }
+  });
+
+  function setStatus(connected) {
+    document.getElementById('statusDot').classList.toggle('live', connected);
+    document.getElementById('statusText').textContent = connected ? 'Live' : 'Disconnected';
+  }
+
+  // ---- Clocks (both screens share real time) ----
+  function tick() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour12: false });
+    const dateStr = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('clock1').textContent = timeStr;
+    document.getElementById('date1').textContent = dateStr;
+    document.getElementById('clock2').textContent = timeStr;
+    document.getElementById('date2').textContent = dateStr;
+  }
+  setInterval(tick, 1000);
+  tick();
+</script>
+
+</body>
+</html>
+
